@@ -38,18 +38,14 @@ def weight_reduce_loss(loss, weight=None, reduction='mean'):
     # if weight is specified, apply element-wise weight
     if weight is not None:
         assert weight.dim() == loss.dim()
-        assert weight.size(1) == 1 or weight.size(1) == loss.size(1)
+        assert weight.size(1) in [1, loss.size(1)]
         loss = loss * weight
 
     # if weight is not specified or reduction is sum, just reduce the loss
     if weight is None or reduction == 'sum':
         loss = reduce_loss(loss, reduction)
-    # if reduction is mean, then compute mean over weight region
     elif reduction == 'mean':
-        if weight.size(1) > 1:
-            weight = weight.sum()
-        else:
-            weight = weight.sum() * loss.size(1)
+        weight = weight.sum() if weight.size(1) > 1 else weight.sum() * loss.size(1)
         loss = loss.sum() / weight
 
     return loss
@@ -113,9 +109,11 @@ def get_local_weights(residual, ksize):
     residual_pad = F.pad(residual, pad=[pad, pad, pad, pad], mode='reflect')
 
     unfolded_residual = residual_pad.unfold(2, ksize, 1).unfold(3, ksize, 1)
-    pixel_level_weight = torch.var(unfolded_residual, dim=(-1, -2), unbiased=True, keepdim=True).squeeze(-1).squeeze(-1)
-
-    return pixel_level_weight
+    return (
+        torch.var(unfolded_residual, dim=(-1, -2), unbiased=True, keepdim=True)
+        .squeeze(-1)
+        .squeeze(-1)
+    )
 
 
 def get_refined_artifact_map(img_gt, img_output, img_ema, ksize):

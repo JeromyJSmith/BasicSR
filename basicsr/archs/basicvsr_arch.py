@@ -208,10 +208,10 @@ class IconVSR(nn.Module):
         x = torch.cat(x, dim=1)
 
         num_frames = 2 * self.temporal_padding + 1
-        feats_keyframe = {}
-        for i in keyframe_idx:
-            feats_keyframe[i] = self.edvr(x[:, i:i + num_frames].contiguous())
-        return feats_keyframe
+        return {
+            i: self.edvr(x[:, i : i + num_frames].contiguous())
+            for i in keyframe_idx
+        }
 
     def forward(self, x):
         b, n, _, h_input, w_input = x.size()

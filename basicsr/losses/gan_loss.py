@@ -125,19 +125,18 @@ class MultiScaleGANLoss(GANLoss):
         """
         The input is a list of tensors, or a list of (a list of tensors)
         """
-        if isinstance(input, list):
-            loss = 0
-            for pred_i in input:
-                if isinstance(pred_i, list):
-                    # Only compute GAN loss for the last layer
-                    # in case of multiscale feature matching
-                    pred_i = pred_i[-1]
-                # Safe operation: 0-dim tensor calling self.mean() does nothing
-                loss_tensor = super().forward(pred_i, target_is_real, is_disc).mean()
-                loss += loss_tensor
-            return loss / len(input)
-        else:
+        if not isinstance(input, list):
             return super().forward(input, target_is_real, is_disc)
+        loss = 0
+        for pred_i in input:
+            if isinstance(pred_i, list):
+                # Only compute GAN loss for the last layer
+                # in case of multiscale feature matching
+                pred_i = pred_i[-1]
+            # Safe operation: 0-dim tensor calling self.mean() does nothing
+            loss_tensor = super().forward(pred_i, target_is_real, is_disc).mean()
+            loss += loss_tensor
+        return loss / len(input)
 
 
 def r1_penalty(real_pred, real_img):
@@ -152,8 +151,7 @@ def r1_penalty(real_pred, real_img):
         Reference: Eq. 9 in Which training methods for GANs do actually converge.
         """
     grad_real = autograd.grad(outputs=real_pred.sum(), inputs=real_img, create_graph=True)[0]
-    grad_penalty = grad_real.pow(2).view(grad_real.shape[0], -1).sum(1).mean()
-    return grad_penalty
+    return grad_real.pow(2).view(grad_real.shape[0], -1).sum(1).mean()
 
 
 def g_path_regularize(fake_img, latents, mean_path_length, decay=0.01):

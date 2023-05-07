@@ -41,19 +41,7 @@ def get_git_hash():
 
 
 def get_hash():
-    if os.path.exists('.git'):
-        sha = get_git_hash()[:7]
-    # currently ignore this
-    # elif os.path.exists(version_file):
-    #     try:
-    #         from basicsr.version import __version__
-    #         sha = __version__.split('+')[-1]
-    #     except ImportError:
-    #         raise ImportError('Unable to get git version')
-    else:
-        sha = 'unknown'
-
-    return sha
+    return get_git_hash()[:7] if os.path.exists('.git') else 'unknown'
 
 
 def write_version_py():
@@ -141,7 +129,7 @@ if __name__ == '__main__':
         setup_kwargs = dict(cmdclass={'build_ext': BuildExtension})
     else:
         ext_modules = []
-        setup_kwargs = dict()
+        setup_kwargs = {}
 
     write_version_py()
     setup(

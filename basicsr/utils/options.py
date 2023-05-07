@@ -44,10 +44,9 @@ def yaml_load(f):
     Returns:
         dict: Loaded dict.
     """
-    if os.path.isfile(f):
-        with open(f, 'r') as f:
-            return yaml.load(f, Loader=ordered_yaml()[0])
-    else:
+    if not os.path.isfile(f):
+        return yaml.load(f, Loader=ordered_yaml()[0])
+    with open(f, 'r') as f:
         return yaml.load(f, Loader=ordered_yaml()[0])
 
 
@@ -90,10 +89,7 @@ def _postprocess_yml_value(value):
     elif value.replace('.', '', 1).isdigit() and value.count('.') < 2:
         return float(value)
     # list
-    if value.startswith('['):
-        return eval(value)
-    # str
-    return value
+    return eval(value) if value.startswith('[') else value
 
 
 def parse_options(root_path, is_train=True):

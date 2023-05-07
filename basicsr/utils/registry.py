@@ -37,7 +37,7 @@ class Registry():
 
     def _do_register(self, name, obj, suffix=None):
         if isinstance(suffix, str):
-            name = name + '_' + suffix
+            name = f'{name}_{suffix}'
 
         assert (name not in self._obj_map), (f"An object named '{name}' was already registered "
                                              f"in '{self._name}' registry!")
@@ -65,7 +65,7 @@ class Registry():
     def get(self, name, suffix='basicsr'):
         ret = self._obj_map.get(name)
         if ret is None:
-            ret = self._obj_map.get(name + '_' + suffix)
+            ret = self._obj_map.get(f'{name}_{suffix}')
             print(f'Name {name} is not found, use name: {name}_{suffix}!')
         if ret is None:
             raise KeyError(f"No object named '{name}' found in '{self._name}' registry!")

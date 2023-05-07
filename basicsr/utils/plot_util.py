@@ -36,10 +36,9 @@ def read_data_from_txt_2v(path, pattern, step_one=False):
 
     pattern = re.compile(pattern)
     for line in lines:
-        match = pattern.match(line)
-        if match:
-            steps.append(int(match.group(1)))
-            values.append(float(match.group(2)))
+        if match := pattern.match(line):
+            steps.append(int(match[1]))
+            values.append(float(match[2]))
     if step_one:
         steps = [v + 1 for v in steps]
     return steps, values
@@ -59,9 +58,8 @@ def read_data_from_txt_1v(path, pattern):
 
     pattern = re.compile(pattern)
     for line in lines:
-        match = pattern.match(line)
-        if match:
-            data.append(float(match.group(1)))
+        if match := pattern.match(line):
+            data.append(float(match[1]))
     return data
 
 
