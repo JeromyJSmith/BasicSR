@@ -39,11 +39,7 @@ def main():
     model.eval()
     model = model.to(device)
 
-    if args.task == 'jpeg_car':
-        window_size = 7
-    else:
-        window_size = 8
-
+    window_size = 7 if args.task == 'jpeg_car' else 8
     for idx, path in enumerate(sorted(glob.glob(os.path.join(args.input, '*')))):
         # read image
         imgname = os.path.splitext(os.path.basename(path))[0]
@@ -92,8 +88,6 @@ def define_model(args):
             upsampler='pixelshuffle',
             resi_connection='1conv')
 
-    # 002 lightweight image sr
-    # use 'pixelshuffledirect' to save parameters
     elif args.task == 'lightweight_sr':
         model = SwinIR(
             upscale=args.scale,
@@ -108,38 +102,36 @@ def define_model(args):
             upsampler='pixelshuffledirect',
             resi_connection='1conv')
 
-    # 003 real-world image sr
     elif args.task == 'real_sr':
-        if not args.large_model:
-            # use 'nearest+conv' to avoid block artifacts
-            model = SwinIR(
+        model = (
+            SwinIR(
                 upscale=4,
                 in_chans=3,
                 img_size=64,
                 window_size=8,
-                img_range=1.,
-                depths=[6, 6, 6, 6, 6, 6],
-                embed_dim=180,
-                num_heads=[6, 6, 6, 6, 6, 6],
-                mlp_ratio=2,
-                upsampler='nearest+conv',
-                resi_connection='1conv')
-        else:
-            # larger model size; use '3conv' to save parameters and memory; use ema for GAN training
-            model = SwinIR(
-                upscale=4,
-                in_chans=3,
-                img_size=64,
-                window_size=8,
-                img_range=1.,
+                img_range=1.0,
                 depths=[6, 6, 6, 6, 6, 6, 6, 6, 6],
                 embed_dim=248,
                 num_heads=[8, 8, 8, 8, 8, 8, 8, 8, 8],
                 mlp_ratio=2,
                 upsampler='nearest+conv',
-                resi_connection='3conv')
-
-    # 004 grayscale image denoising
+                resi_connection='3conv',
+            )
+            if args.large_model
+            else SwinIR(
+                upscale=4,
+                in_chans=3,
+                img_size=64,
+                window_size=8,
+                img_range=1.0,
+                depths=[6, 6, 6, 6, 6, 6],
+                embed_dim=180,
+                num_heads=[6, 6, 6, 6, 6, 6],
+                mlp_ratio=2,
+                upsampler='nearest+conv',
+                resi_connection='1conv',
+            )
+        )
     elif args.task == 'gray_dn':
         model = SwinIR(
             upscale=1,
@@ -154,7 +146,6 @@ def define_model(args):
             upsampler='',
             resi_connection='1conv')
 
-    # 005 color image denoising
     elif args.task == 'color_dn':
         model = SwinIR(
             upscale=1,
@@ -169,8 +160,6 @@ def define_model(args):
             upsampler='',
             resi_connection='1conv')
 
-    # 006 JPEG compression artifact reduction
-    # use window_size=7 because JPEG encoding uses 8x8; use img_range=255 because it's slightly better than 1
     elif args.task == 'jpeg_car':
         model = SwinIR(
             upscale=1,
@@ -186,10 +175,7 @@ def define_model(args):
             resi_connection='1conv')
 
     loadnet = torch.load(args.model_path)
-    if 'params_ema' in loadnet:
-        keyname = 'params_ema'
-    else:
-        keyname = 'params'
+    keyname = 'params_ema' if 'params_ema' in loadnet else 'params'
     model.load_state_dict(loadnet[keyname], strict=True)
 
     return model
